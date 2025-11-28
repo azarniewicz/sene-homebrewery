@@ -52,7 +52,6 @@ const findBrews = async (req, res)=>{
 	};
 
 	const projection = {
-		editId   : 0,
 		googleId : 0,
 		text     : 0,
 		textBin  : 0,

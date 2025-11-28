@@ -282,21 +282,18 @@ describe('Tests for api', ()=>{
 			expect(err).toEqual({ HBErrorCode: '04', message: 'User is not logged in', name: 'Access Error', status: 401, brewTitle: 'test brew', authors: ['a'] });
 		});
 
-		it('throws if logged in as invalid author', async ()=>{
+		it('does not throw if logged in as non-author', async ()=>{
 			api.getId = jest.fn(()=>({ id: '1', googleId: undefined }));
 			model.get = jest.fn(()=>toBrewPromise({ title: 'test brew', authors: ['a'] }));
 
 			const fn = api.getBrew('edit', true);
 			const req = { brew: {}, account: { username: 'b' } };
+			const next = jest.fn();
+			await fn(req, null, next);
 
-			let err;
-			try {
-				await fn(req, null, null);
-			} catch (e) {
-				err = e;
-			}
-
-			expect(err).toEqual({ HBErrorCode: '03', message: 'User is not an Author', name: 'Access Error', status: 401, brewTitle: 'test brew', authors: ['a'] });
+			expect(next).toHaveBeenCalled();
+			expect(req.brew.title).toEqual('test brew');
+			expect(req.brew.authors).toEqual(['a']);
 		});
 
 		it('does not throw if no authors', async ()=>{

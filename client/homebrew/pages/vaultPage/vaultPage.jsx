@@ -37,7 +37,6 @@ const VaultPage = (props)=>{
 	const submitButtonRef = useRef(null);
 
 	useEffect(()=>{
-		disableSubmitIfFormInvalid();
 		loadPage(pageState, true, props.query.sort, props.query.dir);
 	}, []);
 
@@ -94,16 +93,14 @@ const VaultPage = (props)=>{
 	};
 
 	const loadPage = async (page, updateTotal, sort, dir)=>{
-		if(!validateForm()) return;
-
 		setSearching(true);
 		setError(null);
 
-		const title      = titleRef.current.value || '';
-		const author     = authorRef.current.value || '';
-		const count      = countRef.current.value || 10;
-		const v3         = v3Ref.current.checked != false;
-		const legacy     = legacyRef.current.checked != false;
+		const title      = titleRef.current?.value || '';
+		const author     = authorRef.current?.value || '';
+		const count      = countRef.current?.value || 10;
+		const v3         = v3Ref.current?.checked != false ? true : false;
+		const legacy     = legacyRef.current?.checked != false ? true : false;
 		const sortOption = sort || 'title';
 		const dirOption  = dir || 'asc';
 		const pageProp   = page || 1;
@@ -134,14 +131,10 @@ const VaultPage = (props)=>{
 	);
 
 	const validateForm = ()=>{
-		//form validity: title or author must be written, and at least one renderer set
-		const isTitleValid      = titleRef.current.validity.valid && titleRef.current.value;
-		const isAuthorValid     = authorRef.current.validity.valid && authorRef.current.value;
-		const isCheckboxChecked = legacyRef.current.checked || v3Ref.current.checked;
+		//form validity: at least one renderer set
+		const isCheckboxChecked = legacyRef.current?.checked || v3Ref.current?.checked;
 
-		const isFormValid = (isTitleValid || isAuthorValid) && isCheckboxChecked;
-
-		return isFormValid;
+		return isCheckboxChecked;
 	};
 
 	const disableSubmitIfFormInvalid = ()=>{
@@ -160,8 +153,6 @@ const VaultPage = (props)=>{
 						name='title'
 						defaultValue={props.query.title || ''}
 						onKeyUp={disableSubmitIfFormInvalid}
-						pattern='.{3,}'
-						title='At least 3 characters'
 						onKeyDown={(e)=>{
 							if(e.key === 'Enter' && !submitButtonRef.current.disabled)
 								loadPage(1, true);
@@ -176,7 +167,6 @@ const VaultPage = (props)=>{
 						ref={authorRef}
 						type='text'
 						name='author'
-						pattern='.{1,}'
 						defaultValue={props.query.author || ''}
 						onKeyUp={disableSubmitIfFormInvalid}
 						onKeyDown={(e)=>{
@@ -236,7 +226,10 @@ const VaultPage = (props)=>{
 				<h3>Tips and tricks</h3>
 				<ul>
 					<li>
-						Only <b>published</b> brews are searchable via this tool
+						Only <b>published</b> brews are shown in this vault
+					</li>
+					<li>
+						Leave title and author empty to see all published brews
 					</li>
 					<li>
 						Usernames are case-sensitive
@@ -417,14 +410,14 @@ const VaultPage = (props)=>{
 			<link href='/themes/V3/5ePHB/style.css' rel='stylesheet' />
 			{renderNavItems()}
 			<div className='content'>
-				<SplitPane showDividerButtons={false}>
-					<div className='form dataGroup'>{renderForm()}</div>
-					<div className='resultsContainer dataGroup'>
-						{renderSortBar()}
-						{renderFoundBrews()}
-					</div>
-				</SplitPane>
+				<div className='resultsContainer dataGroup'>
+					{renderSortBar()}
+					{renderFoundBrews()}
+				</div>
 			</div>
+			<a href='/new' className='floatingNewButton'>
+				Create your own <i className='fas fa-magic' />
+			</a>
 		</div>
 	);
 };

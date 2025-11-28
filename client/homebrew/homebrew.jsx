@@ -72,8 +72,8 @@ const Homebrew = (props)=>{
 					<Route path='/account' element={<WithRoute el={AccountPage} brew={brew} accountDetails={brew.accountDetails} />} />
 					<Route path='/legacy' element={<WithRoute el={HomePage} brew={brew} />} />
 					<Route path='/error' element={<WithRoute el={ErrorPage} brew={brew} />} />
-					<Route path='/' element={<WithRoute el={HomePage} brew={brew} />} />
-					<Route path='/*' element={<WithRoute el={HomePage} brew={brew} />} />
+					<Route path='/' element={<WithRoute el={VaultPage}/>}/>
+					<Route path='/*' element={<WithRoute el={VaultPage}/>}/>
 				</Routes>
 			</div>
 		</Router>

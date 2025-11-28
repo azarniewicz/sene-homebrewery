@@ -129,12 +129,9 @@ const api = {
 			const isAuthor  = stub?.authors?.includes(req.account?.username);
 			const isInvited = stub?.invitedAuthors?.includes(req.account?.username);
 
-			if(accessType === 'edit' && !(isOwner || isAuthor || isInvited)) {
+			if(accessType === 'edit' && !req.account) {
 				const accessError = { name: 'Access Error', status: 401, authors: stub?.authors, brewTitle: stub?.title, shareId: stub?.shareId };
-				if(req.account)
-					throw { ...accessError, message: 'User is not an Author', HBErrorCode: '03' };
-				else
-					throw { ...accessError, message: 'User is not logged in', HBErrorCode: '04' };
+				throw { ...accessError, message: 'User is not logged in', HBErrorCode: '04' };
 			}
 
 			if(stub?.lock && accessType === 'share') {

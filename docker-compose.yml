@@ -3,6 +3,8 @@ services:
     image: mongo:latest
     volumes:
       - mongodata:/data/db
+    ports:
+      - "27017:27017"
   homebrewery:
     build:
       context: .
@@ -10,7 +12,14 @@ services:
     image: homebrewery
     environment:
       MONGODB_URI: mongodb://mongodb/homebrewery
+  nginx:
+    image: nginx:alpine
     ports:
-      - "8000:8000"
+      - "8001:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./.htpasswd:/etc/nginx/.htpasswd:ro
+    depends_on:
+      - homebrewery
 volumes:
   mongodata:

@@ -9,6 +9,23 @@
 		flex-direction   : column;
 		height           : 100%;
 		overflow-y       : hidden;
+		
+		a.floatingNewButton {
+			.animate(background-color);
+			position         : fixed;
+			bottom           : 50px;
+			left             : 70px;
+			z-index          : 5001;
+			display          : block;
+			padding          : 1em;
+			font-size        : 1.5em;
+			color            : white;
+			text-decoration  : none;
+			background-color : @orange;
+			box-shadow       : 3px 3px 15px black;
+			&:hover { background-color : darken(@orange, 20%); }
+		}
+		
 		.content {
 			position   : relative;
 			flex       : auto;

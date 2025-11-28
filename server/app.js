@@ -133,18 +133,10 @@ app.get('/robots.txt', (req, res)=>{
 
 //Home page
 app.get('/', (req, res, next)=>{
-	req.brew = {
-		text     : welcomeText,
-		renderer : 'V3',
-		theme    : '5ePHB'
-	},
-
 	req.ogMeta = { ...defaultMetaTags,
-		title       : 'Homepage',
-		description : 'Homepage'
+		title       : 'The Vault',
+		description : 'Browse published brews'
 	};
-
-	splitTextStyleAndMetadata(req.brew);
 	return next();
 });
 
