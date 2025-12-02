@@ -2,12 +2,12 @@ require('./error-navitem.less');
 const React = require('react');
 const Nav = require('client/homebrew/navbar/nav.jsx');
 
-const ErrorNavItem = ({ error = '', clearError })=>{
-	const response    = error.response;
-	const errorCode   = error.code;
-	const status      = response?.status;
+const ErrorNavItem = ({ error = '', clearError }) => {
+	const response = error.response;
+	const errorCode = error.code;
+	const status = response?.status;
 	const HBErrorCode = response?.body?.HBErrorCode;
-	const message     = response?.body?.message;
+	const message = response?.body?.message;
 
 	let errMsg = '';
 	try {
@@ -15,9 +15,9 @@ const ErrorNavItem = ({ error = '', clearError })=>{
 		errMsg += `\`\`\`\n${error.stack}\n`;
 		errMsg += `${JSON.stringify(response?.error, null, '  ')}\n\`\`\``;
 		console.log(errMsg);
-	} catch {}
+	} catch { }
 
-	if(status === 409) {
+	if (status === 409) {
 		return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
 			Oops!
 			<div className='errorContainer' onClick={clearError}>
@@ -26,7 +26,7 @@ const ErrorNavItem = ({ error = '', clearError })=>{
 		</Nav.item>;
 	}
 
-	if(status === 412) {
+	if (status === 412) {
 		return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
 			Oops!
 			<div className='errorContainer' onClick={clearError}>
@@ -35,7 +35,7 @@ const ErrorNavItem = ({ error = '', clearError })=>{
 		</Nav.item>;
 	}
 
-	if(HBErrorCode === '04') {
+	if (HBErrorCode === '04') {
 		return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
 			Oops!
 			<div className='errorContainer' onClick={clearError}>
@@ -56,16 +56,16 @@ const ErrorNavItem = ({ error = '', clearError })=>{
 		</Nav.item>;
 	}
 
-	if(response?.body?.errors?.[0].reason == 'storageQuotaExceeded') {
+	if (response?.body?.errors?.[0].reason == 'storageQuotaExceeded') {
 		return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
-		Oops!
+			Oops!
 			<div className='errorContainer' onClick={clearError}>
-			Can't save because your Google Drive seems to be full!
+				Can't save because your Google Drive seems to be full!
 			</div>
 		</Nav.item>;
 	}
 
-	if(response?.req.url.match(/^\/api.*Google.*$/m)){
+	if (response?.req.url.match(/^\/api.*Google.*$/m)) {
 		return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
 			Oops!
 			<div className='errorContainer' onClick={clearError}>
@@ -87,7 +87,7 @@ const ErrorNavItem = ({ error = '', clearError })=>{
 		</Nav.item>;
 	}
 
-	if(HBErrorCode === '09') {
+	if (HBErrorCode === '09') {
 		return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
 			Oops!
 			<div className='errorContainer' onClick={clearError}>
@@ -99,7 +99,7 @@ const ErrorNavItem = ({ error = '', clearError })=>{
 		</Nav.item>;
 	}
 
-	if(HBErrorCode === '10') {
+	if (HBErrorCode === '10') {
 		return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
 			Oops!
 			<div className='errorContainer' onClick={clearError}>
@@ -112,7 +112,7 @@ const ErrorNavItem = ({ error = '', clearError })=>{
 		</Nav.item>;
 	}
 
-	if(HBErrorCode === '13') {
+	if (HBErrorCode === '13') {
 		return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
 			Oops!
 			<div className='errorContainer' onClick={clearError}>
@@ -121,7 +121,7 @@ const ErrorNavItem = ({ error = '', clearError })=>{
 		</Nav.item>;
 	}
 
-	if(errorCode === 'ECONNABORTED') {
+	if (errorCode === 'ECONNABORTED') {
 		return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
 			Oops!
 			<div className='errorContainer' onClick={clearError}>
@@ -137,8 +137,8 @@ const ErrorNavItem = ({ error = '', clearError })=>{
 		Oops!
 		<div className='errorContainer'>
 			Looks like there was a problem saving. <br />
-			Report the issue <a target='_blank' rel='noopener noreferrer' href={`https://github.com/naturalcrit/homebrewery/issues/new?template=save_issue.yml&error-code=${encodeURIComponent(errMsg)}`}>
-			here
+			Report the issue <a target='_blank' rel='noopener noreferrer' href={`https://github.com/azarniewicz/sene-homebrewery/issues/new?template=save_issue.yml&error-code=${encodeURIComponent(errMsg)}`}>
+				here
 			</a>.
 		</div>
 	</Nav.item>;

@@ -69,6 +69,7 @@ const corsOptions = {
 			'https://www.naturalcrit.com',
 			'https://naturalcrit-stage.herokuapp.com',
 			'https://homebrewery-stage.herokuapp.com',
+			'https://homebrewery.sene-verse.com',
 		];
 
 		const localNetworkRegex = /^http:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+):\d+$/;
@@ -480,7 +481,6 @@ app.get('/account', dbCheck, asyncHandler(async (req, res, next) => {
 	data.title = 'Account Information Page';
 
 	if (!req.account) {
-		res.set('WWW-Authenticate', 'Bearer realm="Authorization Required"');
 		const error = new Error('No valid account');
 		error.status = 401;
 		error.HBErrorCode = '50';
