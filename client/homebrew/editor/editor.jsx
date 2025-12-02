@@ -86,9 +86,9 @@ const Editor = createClass({
 			});
 		}
 		const snippetBar = document.querySelector('.editor > .snippetBar');
-		if (!snippetBar) return;
+		if(!snippetBar) return;
 
-		this.resizeObserver = new ResizeObserver(entries => {
+		this.resizeObserver = new ResizeObserver((entries)=>{
 			const height = document.querySelector('.editor > .snippetBar').offsetHeight;
 			this.setState({ snippetBarHeight: height });
 		});
@@ -117,7 +117,7 @@ const Editor = createClass({
 	},
 
 	componentWillUnmount() {
-		if (this.resizeObserver) this.resizeObserver.disconnect();
+		if(this.resizeObserver) this.resizeObserver.disconnect();
 	},
 
 	handleControlKeys : function(e){
@@ -337,7 +337,7 @@ const Editor = createClass({
 		const brewRenderer = window.frames['BrewRenderer'].contentDocument.getElementsByClassName('brewRenderer')[0];
 		const currentPos = brewRenderer.scrollTop;
 		const targetPos = window.frames['BrewRenderer'].contentDocument.getElementById(`p${targetPage}`).getBoundingClientRect().top;
-		
+
 		let scrollingTimeout;
 		const checkIfScrollComplete = ()=>{	// Prevent interrupting a scroll in progress if user clicks multiple times
 			clearTimeout(scrollingTimeout);   // Reset the timer every time a scroll event occurs

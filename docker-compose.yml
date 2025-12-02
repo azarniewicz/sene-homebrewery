@@ -5,6 +5,8 @@ services:
       - mongodata:/data/db
     ports:
       - "27017:27017"
+    networks:
+      - sene-network
   homebrewery:
     build:
       context: .
@@ -12,6 +14,8 @@ services:
     image: homebrewery
     environment:
       MONGODB_URI: mongodb://mongodb/homebrewery
+    networks:
+      - sene-network
   nginx:
     image: nginx:alpine
     ports:
@@ -21,5 +25,10 @@ services:
       - ./.htpasswd:/etc/nginx/.htpasswd:ro
     depends_on:
       - homebrewery
+    networks:
+      - sene-network
 volumes:
   mongodata:
+networks:
+  sene-network:
+    external: true

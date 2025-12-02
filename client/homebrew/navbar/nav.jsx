@@ -8,55 +8,55 @@ const cx = require('classnames');
 const NaturalCritIcon = require('client/components/svg/naturalcrit-d20.svg.jsx');
 
 const Nav = {
-	base : createClass({
-		displayName : 'Nav.base',
-		render      : function(){
+	base: createClass({
+		displayName: 'Nav.base',
+		render: function () {
 			return <nav>
 				{this.props.children}
 			</nav>;
 		}
 	}),
-	logo : function(){
-		return <a className='navLogo' href='https://www.naturalcrit.com'>
-			<NaturalCritIcon />
+	logo: function () {
+		const href = global?.config?.seneVerseBackendUrl + '/admin/' ?? 'https://www.naturalcrit.com';
+		return <a className='navLogo' href={href}>
 			<span className='name'>
-				Natural<span className='crit'>Crit</span>
+				Sene Verse
 			</span>
 		</a>;
 	},
 
-	section : createClass({
-		displayName : 'Nav.section',
-		render      : function(){
+	section: createClass({
+		displayName: 'Nav.section',
+		render: function () {
 			return <div className={`navSection ${this.props.className ?? ''}`}>
 				{this.props.children}
 			</div>;
 		}
 	}),
 
-	item : createClass({
-		displayName     : 'Nav.item',
-		getDefaultProps : function() {
+	item: createClass({
+		displayName: 'Nav.item',
+		getDefaultProps: function () {
 			return {
-				icon    : null,
-				href    : null,
-				newTab  : false,
-				onClick : function(){},
-				color   : null
+				icon: null,
+				href: null,
+				newTab: false,
+				onClick: function () { },
+				color: null
 			};
 		},
-		handleClick : function(e){
+		handleClick: function (e) {
 			this.props.onClick(e);
 		},
-		render : function(){
+		render: function () {
 			const classes = cx('navItem', this.props.color, this.props.className);
 
 			let icon;
-			if(this.props.icon) icon = <i className={this.props.icon} />;
+			if (this.props.icon) icon = <i className={this.props.icon} />;
 
 			const props = _.omit(this.props, ['newTab']);
 
-			if(this.props.href){
+			if (this.props.href) {
 				return <a {...props} className={classes} target={this.props.newTab ? '_blank' : '_self'} >
 					{this.props.children}
 					{icon}
@@ -70,24 +70,24 @@ const Nav = {
 		}
 	}),
 
-	dropdown : function dropdown(props) {
+	dropdown: function dropdown(props) {
 		props = Object.assign({}, props, {
-			trigger : 'hover click'
+			trigger: 'hover click'
 		});
 
 		const myRef = useRef(null);
 		const [showDropdown, setShowDropdown] = useState(false);
 
-		useEffect(()=>{
+		useEffect(() => {
 			document.addEventListener('click', handleClickOutside);
-			return ()=>{
+			return () => {
 				document.removeEventListener('click', handleClickOutside);
 			};
 		}, []);
 
 		function handleClickOutside(e) {
 			// Close dropdown when clicked outside
-			if(!myRef.current?.contains(e.target)) {
+			if (!myRef.current?.contains(e.target)) {
 				handleDropdown(false);
 			}
 		}
@@ -96,17 +96,17 @@ const Nav = {
 			setShowDropdown(show ?? !showDropdown);
 		}
 
-		const dropdownChildren = React.Children.map(props.children, (child, i)=>{
-			if(i < 1) return;
+		const dropdownChildren = React.Children.map(props.children, (child, i) => {
+			if (i < 1) return;
 			return child;
 		});
 
 		return (
 			<div className={`navDropdownContainer ${props.className ?? ''}`}
 				ref={myRef}
-				onMouseEnter = { props.trigger.includes('hover') ? ()=>handleDropdown(true)  : undefined }
-				onMouseLeave = { props.trigger.includes('hover') ? ()=>handleDropdown(false) : undefined }
-				onClick      = { props.trigger.includes('click') ? ()=>handleDropdown(true)  : undefined }
+				onMouseEnter={props.trigger.includes('hover') ? () => handleDropdown(true) : undefined}
+				onMouseLeave={props.trigger.includes('hover') ? () => handleDropdown(false) : undefined}
+				onClick={props.trigger.includes('click') ? () => handleDropdown(true) : undefined}
 			>
 				{props.children[0] || props.children /*children is not an array when only one child*/}
 				{showDropdown && <div className='navDropdown'>{dropdownChildren}</div>}

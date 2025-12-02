@@ -1,19 +1,22 @@
 /* eslint-disable max-lines */
-import _                             from 'lodash';
-import { model as HomebrewModel }    from './homebrew.model.js';
-import express                       from 'express';
-import zlib                          from 'zlib';
-import GoogleActions                 from './googleActions.js';
-import Markdown                      from '../shared/markdown.js';
-import yaml                          from 'js-yaml';
-import asyncHandler                  from 'express-async-handler';
-import { nanoid }                    from 'nanoid';
+import _ from 'lodash';
+import { model as HomebrewModel } from './homebrew.model.js';
+import express from 'express';
+import zlib from 'zlib';
+import GoogleActions from './googleActions.js';
+import Markdown from '../shared/markdown.js';
+import yaml from 'js-yaml';
+import asyncHandler from 'express-async-handler';
+import { nanoid } from 'nanoid';
 import { makePatches, applyPatches, stringifyPatches, parsePatch } from '@sanity/diff-match-patch';
-import { md5 }                       from 'hash-wasm';
-import { splitTextStyleAndMetadata,
-		 brewSnippetsToJSON, debugTextMismatch }        from '../shared/helpers.js';
-import checkClientVersion            from './middleware/check-client-version.js';
-import dbCheck                       from './middleware/dbCheck.js';
+import { md5 } from 'hash-wasm';
+import {
+	splitTextStyleAndMetadata,
+	brewSnippetsToJSON, debugTextMismatch
+} from '../shared/helpers.js';
+import checkClientVersion from './middleware/check-client-version.js';
+import dbCheck from './middleware/dbCheck.js';
+import apiKeyAuth from './middleware/api-key-auth.js';
 
 
 const router = express.Router();
@@ -21,7 +24,7 @@ const router = express.Router();
 import { DEFAULT_BREW, DEFAULT_BREW_LOAD } from './brewDefaults.js';
 import Themes from '../themes/themes.json' with { type: 'json' };
 
-const isStaticTheme = (renderer, themeName)=>{
+const isStaticTheme = (renderer, themeName) => {
 	return Themes[renderer]?.[themeName] !== undefined;
 };
 
@@ -32,16 +35,27 @@ const isStaticTheme = (renderer, themeName)=>{
 // };
 
 const MAX_TITLE_LENGTH = 100;
+const PAGEBREAK_REGEX_V3 = /^(?=\\page(?:break)?(?: *{[^\n{}]*})?$)/m;
+const PAGEBREAK_REGEX_LEGACY = /\\page(?:break)?/m;
+const FRONT_COVER_MARKER = '{{frontCover';
+const PAGE_DIRECTIVE_LINE_REGEX = /^\s*\\page(?:break)?(?: *{[^\n{}]*})?\s*(?:\r?\n|$)/gm;
+
+const splitPages = (text, renderer) => {
+	const regex = renderer === 'legacy' ? PAGEBREAK_REGEX_LEGACY : PAGEBREAK_REGEX_V3;
+	return text.split(regex);
+};
+
+const stripPageDirectives = (text) => text.replace(PAGE_DIRECTIVE_LINE_REGEX, '');
 
 const api = {
-	homebrewApi : router,
-	getId       : (req)=>{
+	homebrewApi: router,
+	getId: (req) => {
 		// Set the id and initial potential google id, where the google id is present on the existing brew.
 		let id = req.params.id, googleId = req.body?.googleId;
 
 		// If the id is longer than 12, then it's a google id + the edit id. This splits the longer id up.
-		if(id.length > 12) {
-			if(id.length >= (33 + 12)) {    // googleId is minimum 33 chars (may increase)
+		if (id.length > 12) {
+			if (id.length >= (33 + 12)) {    // googleId is minimum 33 chars (may increase)
 				googleId = id.slice(0, -12);  // current editId is 12 chars
 			} else {                        // old editIds used to be 10 chars;
 				googleId = id.slice(0, -10);  // if total string is too short, must be old brew
@@ -53,21 +67,21 @@ const api = {
 		// ID Validation Checks
 		// Homebrewery ID
 		// Typically 12 characters, but the DB shows a range of 7 to 14 characters
-		if(!id.match(/^[a-zA-Z0-9-_]{7,14}$/)){
+		if (!id.match(/^[a-zA-Z0-9-_]{7,14}$/)) {
 			throw { name: 'ID Error', message: 'Invalid ID', status: 404, HBErrorCode: '11', brewId: id };
 		}
 		// Google ID
 		// Typically 33 characters, old format is 44 - always starts with a 1
 		// Managed by Google, may change outside of our control, so any length between 33 and 44 is acceptable
-		if(googleId && !googleId.match(/^1(?:[a-zA-Z0-9-_]{32,43})$/)){
+		if (googleId && !googleId.match(/^1(?:[a-zA-Z0-9-_]{32,43})$/)) {
 			throw { name: 'Google ID Error', message: 'Invalid ID', status: 404, HBErrorCode: '12', brewId: id };
 		}
 
 		return { id, googleId };
 	},
 	//Get array of any of this user's brews tagged with `meta:theme`
-	getUsersBrewThemes : async (username)=>{
-		if(!username)
+	getUsersBrewThemes: async (username) => {
+		if (!username)
 			return {};
 
 		const fields = [
@@ -85,39 +99,39 @@ const api = {
 
 		const brews = await HomebrewModel.getByUser(username, true, fields, { tags: { $in: ['meta:theme', 'meta:Theme'] } });
 
-		if(brews) {
+		if (brews) {
 			for (const brew of brews) {
 				userThemes[brew.renderer] ??= {};
 				userThemes[brew.renderer][brew.shareId] = {
-					name         : brew.title,
-					renderer     : brew.renderer,
-					baseTheme    : brew.theme,
-					baseSnippets : false,
-					author       : brew.authors[0],
-					path         : brew.shareId,
-					thumbnail    : brew.thumbnail || '/assets/naturalCritLogoWhite.svg'
+					name: brew.title,
+					renderer: brew.renderer,
+					baseTheme: brew.theme,
+					baseSnippets: false,
+					author: brew.authors[0],
+					path: brew.shareId,
+					thumbnail: brew.thumbnail || '/assets/naturalCritLogoWhite.svg'
 				};
 			}
 		}
 
 		return userThemes;
 	},
-	getBrew : (accessType, stubOnly = false)=>{
+	getBrew: (accessType, stubOnly = false) => {
 		// Create middleware with the accessType passed in as part of the scope
-		return async (req, res, next)=>{
+		return async (req, res, next) => {
 			// Get relevant IDs for the brew
 			let { id, googleId } = api.getId(req);
 
 			const accessMap = {
-				edit  : { editId: id },
-				share : { shareId: id },
-				admin : { $or: [{ editId: id }, { shareId: id }] }
+				edit: { editId: id },
+				share: { shareId: id },
+				admin: { $or: [{ editId: id }, { shareId: id }] }
 			};
 
 			// Try to find the document in the Homebrewery database -- if it doesn't exist, that's fine.
 			let stub = await HomebrewModel.get(accessMap[accessType])
-				.catch((err)=>{
-					if(googleId)
+				.catch((err) => {
+					if (googleId)
 						console.warn(`Unable to find document stub for ${accessType}Id ${id}`);
 					else
 						console.warn(err);
@@ -125,27 +139,27 @@ const api = {
 			stub = stub?.toObject();
 			googleId ??= stub?.googleId;
 
-			const isOwner   = (accessType == 'edit' && (!stub || stub?.authors?.length === 0)) || stub?.authors?.[0] === req.account?.username;
-			const isAuthor  = stub?.authors?.includes(req.account?.username);
+			const isOwner = (accessType == 'edit' && (!stub || stub?.authors?.length === 0)) || stub?.authors?.[0] === req.account?.username;
+			const isAuthor = stub?.authors?.includes(req.account?.username);
 			const isInvited = stub?.invitedAuthors?.includes(req.account?.username);
 
-			if(accessType === 'edit' && !req.account) {
+			if (accessType === 'edit' && !req.account) {
 				const accessError = { name: 'Access Error', status: 401, authors: stub?.authors, brewTitle: stub?.title, shareId: stub?.shareId };
 				throw { ...accessError, message: 'User is not logged in', HBErrorCode: '04' };
 			}
 
-			if(stub?.lock && accessType === 'share') {
+			if (stub?.lock && accessType === 'share') {
 				throw { HBErrorCode: '51', code: stub.lock.code, message: stub.lock.shareMessage, brewId: stub.shareId, brewTitle: stub.title, brewAuthors: stub.authors };
 			}
 
 			// If there's a google id, get it if requesting the full brew or if no stub found yet
-			if(googleId && (!stubOnly || !stub)) {
+			if (googleId && (!stubOnly || !stub)) {
 				const oAuth2Client = isOwner ? GoogleActions.authCheck(req.account, res) : undefined;
 
 				const googleBrew = await GoogleActions.getGoogleBrew(oAuth2Client, googleId, id, accessType)
-					.catch((googleError)=>{
+					.catch((googleError) => {
 						const reason = googleError.errors?.[0].reason;
-						if(reason == 'notFound')
+						if (reason == 'notFound')
 							throw { ...googleError, HBErrorCode: '02', authors: stub?.authors, account: req.account?.username };
 						else
 							throw { ...googleError, HBErrorCode: '01' };
@@ -156,11 +170,11 @@ const api = {
 			}
 
 			// If after all of that we still don't have a brew, throw an exception
-			if(!stub)
+			if (!stub)
 				throw { name: 'BrewLoad Error', message: 'Brew not found', status: 404, HBErrorCode: '05', accessType: accessType, brewId: id };
 
 			// Clean up brew: fill in missing fields with defaults / fix old invalid values
-			stub.tags     = stub.tags     || undefined; // Clear empty strings
+			stub.tags = stub.tags || undefined; // Clear empty strings
 			stub.renderer = stub.renderer || undefined; // Clear empty strings
 			stub = _.defaults(stub, DEFAULT_BREW_LOAD); // Fill in blank fields
 
@@ -169,22 +183,22 @@ const api = {
 		};
 	},
 
-	getCSS : async (req, res)=>{
+	getCSS: async (req, res) => {
 		const { brew } = req;
-		if(!brew) return res.status(404).send('');
+		if (!brew) return res.status(404).send('');
 		splitTextStyleAndMetadata(brew);
-		if(!brew.style) return res.status(404).send('');
+		if (!brew.style) return res.status(404).send('');
 
 		res.set({
-			'Cache-Control' : 'no-cache',
-			'Content-Type'  : 'text/css'
+			'Cache-Control': 'no-cache',
+			'Content-Type': 'text/css'
 		});
 		return res.status(200).send(brew.style);
 	},
 
-	mergeBrewText : (brew)=>{
+	mergeBrewText: (brew) => {
 		let text = brew.text;
-		if(brew.style !== undefined) {
+		if (brew.style !== undefined) {
 			text = `\`\`\`css\n` +
 				`${brew.style || ''}\n` +
 				`\`\`\`\n\n` +
@@ -200,12 +214,22 @@ const api = {
 		return text;
 	},
 
-	getGoodBrewTitle : (text)=>{
+	getGoodBrewTitle: (text) => {
 		const tokens = Markdown.marked.lexer(text);
-		return (tokens.find((token)=>token.type === 'heading' || token.type === 'paragraph')?.text || 'No Title')
+		return (tokens.find((token) => token.type === 'heading' || token.type === 'paragraph')?.text || 'No Title')
 			.slice(0, MAX_TITLE_LENGTH);
 	},
-	excludePropsFromUpdate : (brew)=>{
+	getSectionsSource: (brew) => {
+		const text = brew?.text || '';
+		if (!text.includes(FRONT_COVER_MARKER)) return text;
+		const renderer = brew.renderer === 'legacy' ? 'legacy' : 'V3';
+		const pages = splitPages(text, renderer);
+		if (pages.length <= 1) return stripPageDirectives(text);
+		const bodyPages = pages.slice(1);
+		const joined = renderer === 'legacy' ? bodyPages.join('\n\\page\n') : bodyPages.join('');
+		return stripPageDirectives(joined);
+	},
+	excludePropsFromUpdate: (brew) => {
 		// Remove undesired properties
 		const modified = _.clone(brew);
 		const propsToExclude = ['_id', 'views', 'lastViewed'];
@@ -214,7 +238,7 @@ const api = {
 		}
 		return modified;
 	},
-	excludeGoogleProps : (brew)=>{
+	excludeGoogleProps: (brew) => {
 		const modified = _.clone(brew);
 		const propsToExclude = ['version', 'tags', 'systems', 'published', 'authors', 'owner', 'views', 'thumbnail'];
 		for (const prop of propsToExclude) {
@@ -222,15 +246,15 @@ const api = {
 		}
 		return modified;
 	},
-	excludeStubProps : (brew)=>{
+	excludeStubProps: (brew) => {
 		const propsToExclude = ['text', 'textBin'];
 		for (const prop of propsToExclude) {
 			brew[prop] = undefined;
 		}
 		return brew;
 	},
-	beforeNewSave : (account, brew)=>{
-		if(!brew.title) {
+	beforeNewSave: (account, brew) => {
+		if (!brew.title) {
 			brew.title = api.getGoodBrewTitle(brew.text);
 		}
 
@@ -242,14 +266,14 @@ const api = {
 		brew.title = brew.title.trim();
 		brew.description = brew.description.trim();
 	},
-	newGoogleBrew : async (account, brew, res)=>{
+	newGoogleBrew: async (account, brew, res) => {
 		const oAuth2Client = GoogleActions.authCheck(account, res);
 
 		const newBrew = api.excludeGoogleProps(brew);
 
 		return await GoogleActions.newGoogleBrew(oAuth2Client, newBrew);
 	},
-	newBrew : async (req, res)=>{
+	newBrew: async (req, res) => {
 		const brew = req.body;
 		const { saveToGoogle } = req.query;
 
@@ -264,10 +288,10 @@ const api = {
 		newHomebrew.shareId = nanoid(12);
 
 		let googleId, saved;
-		if(saveToGoogle) {
+		if (saveToGoogle) {
 			googleId = await api.newGoogleBrew(req.account, newHomebrew, res);
 
-			if(!googleId) return;
+			if (!googleId) return;
 			api.excludeStubProps(newHomebrew);
 			newHomebrew.googleId = googleId;
 		} else {
@@ -278,16 +302,16 @@ const api = {
 		}
 
 		saved = await newHomebrew.save()
-			.catch((err)=>{
+			.catch((err) => {
 				console.error(err, err.toString(), err.stack);
 				throw { name: 'BrewSave Error', message: `Error while creating new brew, ${err.toString()}`, status: 500, HBErrorCode: '06' };
 			});
-		if(!saved) return;
+		if (!saved) return;
 		saved = saved.toObject();
 
 		res.status(200).send(saved);
 	},
-	getThemeBundle : async(req, res)=>{
+	getThemeBundle: async (req, res) => {
 		/*	getThemeBundle: Collects the theme and all parent themes
 				returns an object containing an array of css, and an array of snippets, in render order
 
@@ -296,39 +320,39 @@ const api = {
 
 		req.params.renderer = _.upperFirst(req.params.renderer);
 		let currentTheme;
-		const completeStyles   = [];
+		const completeStyles = [];
 		const completeSnippets = [];
 		let themeName;
 		let themeAuthor;
 
 		while (req.params.id) {
 			//=== User Themes ===//
-			if(!isStaticTheme(req.params.renderer, req.params.id)) {
-				await api.getBrew('share')(req, res, ()=>{})
-					.catch((err)=>{
-						if(err.HBErrorCode == '05')
+			if (!isStaticTheme(req.params.renderer, req.params.id)) {
+				await api.getBrew('share')(req, res, () => { })
+					.catch((err) => {
+						if (err.HBErrorCode == '05')
 							err = { ...err, name: 'ThemeLoad Error', message: 'Theme Not Found', HBErrorCode: '09' };
 						throw err;
 					});
 
 				currentTheme = req.brew;
 				splitTextStyleAndMetadata(currentTheme);
-				if(!currentTheme.tags.some((tag)=>tag === 'meta:theme' || tag === 'meta:Theme'))
+				if (!currentTheme.tags.some((tag) => tag === 'meta:theme' || tag === 'meta:Theme'))
 					throw { brewId: req.params.id, name: 'Invalid Theme Selected', message: 'Selected theme does not have the meta:theme tag', status: 422, HBErrorCode: '10' };
-				themeName   ??= currentTheme.title;
+				themeName ??= currentTheme.title;
 				themeAuthor ??= currentTheme.authors?.[0];
 
 				// If there is anything in the snippets or style members, append them to the appropriate array
-				if(currentTheme?.snippets) completeSnippets.push({ name: currentTheme.title, snippets: currentTheme.snippets });
-				if(currentTheme?.style) completeStyles.push(`/* From Brew: ${req.protocol}://${req.get('host')}/share/${req.params.id} */\n\n${currentTheme.style}`);
+				if (currentTheme?.snippets) completeSnippets.push({ name: currentTheme.title, snippets: currentTheme.snippets });
+				if (currentTheme?.style) completeStyles.push(`/* From Brew: ${req.protocol}://${req.get('host')}/share/${req.params.id} */\n\n${currentTheme.style}`);
 
-				req.params.id       = currentTheme.theme;
+				req.params.id = currentTheme.theme;
 				req.params.renderer = currentTheme.renderer;
 			} else {
-			//=== Static Themes ===//
+				//=== Static Themes ===//
 				themeName ??= req.params.id;
 				const localSnippets = `${req.params.renderer}_${req.params.id}`; // Just log the name for loading on client
-				const localStyle    = `@import url(\"/themes/${req.params.renderer}/${req.params.id}/style.css\");`;
+				const localStyle = `@import url(\"/themes/${req.params.renderer}/${req.params.id}/style.css\");`;
 				completeSnippets.push(localSnippets);
 				completeStyles.push(`/* From Theme ${req.params.id} */\n\n${localStyle}`);
 
@@ -338,32 +362,32 @@ const api = {
 
 		const returnObj = {
 			// Reverse the order of the arrays so they are listed oldest parent to youngest child.
-			styles   : completeStyles.reverse(),
-			snippets : completeSnippets.reverse(),
-			name     : themeName,
-			author   : themeAuthor
+			styles: completeStyles.reverse(),
+			snippets: completeSnippets.reverse(),
+			name: themeName,
+			author: themeAuthor
 		};
 
 		res.setHeader('Content-Type', 'application/json');
 		return res.status(200).send(returnObj);
 	},
-	updateBrew : async (req, res)=>{
+	updateBrew: async (req, res) => {
 		// Initialize brew from request and body, destructure query params, and set the initial value for the after-save method
 		const brewFromClient = api.excludePropsFromUpdate(req.body);
 		const brewFromServer = req.brew;
 		splitTextStyleAndMetadata(brewFromServer);
 
-		if(brewFromServer?.version !== brewFromClient?.version){
+		if (brewFromServer?.version !== brewFromClient?.version) {
 			console.log(`Version mismatch on brew ${brewFromClient.editId}`);
 
 			res.setHeader('Content-Type', 'application/json');
 			return res.status(409).send(JSON.stringify({ message: `The server version is out of sync with the saved brew. Please save your changes elsewhere, refresh, and try again.` }));
 		}
 
-		brewFromServer.text  = brewFromServer.text.normalize('NFC');
-		brewFromServer.hash  = await md5(brewFromServer.text);
+		brewFromServer.text = brewFromServer.text.normalize('NFC');
+		brewFromServer.hash = await md5(brewFromServer.text);
 
-		if(brewFromServer?.hash !== brewFromClient?.hash) {
+		if (brewFromServer?.hash !== brewFromClient?.hash) {
 			console.log(`Hash mismatch on brew ${brewFromClient.editId}`);
 			//debugTextMismatch(brewFromClient.text, brewFromServer.text, `edit/${brewFromClient.editId}`);
 			res.setHeader('Content-Type', 'application/json');
@@ -374,53 +398,53 @@ const api = {
 			const patches = parsePatch(brewFromClient.patches);
 			// Patch to a throwaway variable while parallelizing - we're more concerned with error/no error.
 			const patchedResult = decodeURI(applyPatches(patches, encodeURI(brewFromServer.text))[0]);
-			if(patchedResult != brewFromClient.text)
+			if (patchedResult != brewFromClient.text)
 				throw ('Patches did not apply cleanly, text mismatch detected');
 			// brew.text = applyPatches(patches, brewFromServer.text)[0];
 		} catch (err) {
 			//debugTextMismatch(brewFromClient.text, brewFromServer.text, `edit/${brewFromClient.editId}`);
 			console.error('Failed to apply patches:', {
 				//patches : brewFromClient.patches,
-				brewId : brewFromClient.editId || 'unknown',
-				error  : err
+				brewId: brewFromClient.editId || 'unknown',
+				error: err
 			});
 			// While running in parallel, don't throw the error upstream.
 			// throw err; // rethrow to preserve the 500 behavior
 		}
 
-		let brew         = _.assign(brewFromServer, brewFromClient);
-		brew.title       = brew.title.trim();
+		let brew = _.assign(brewFromServer, brewFromClient);
+		brew.title = brew.title.trim();
 		brew.description = brew.description.trim() || '';
-		brew.text        = api.mergeBrewText(brew);
+		brew.text = api.mergeBrewText(brew);
 
 		const googleId = brew.googleId;
 		const { saveToGoogle, removeFromGoogle } = req.query;
-		let afterSave = async ()=>true;
+		let afterSave = async () => true;
 
-		if(brew.googleId && removeFromGoogle) {
+		if (brew.googleId && removeFromGoogle) {
 			// If the google id exists and we're removing it from google, set afterSave to delete the google brew and mark the brew's google id as undefined
-			afterSave = async ()=>{
+			afterSave = async () => {
 				return await api.deleteGoogleBrew(req.account, googleId, brew.editId, res)
-					.catch((err)=>{
+					.catch((err) => {
 						console.error(err);
 						res.status(err?.status || err?.response?.status || 500).send(err.message || err);
 					});
 			};
 
 			brew.googleId = undefined;
-		} else if(!brew.googleId && saveToGoogle) {
+		} else if (!brew.googleId && saveToGoogle) {
 			// If we don't have a google id and the user wants to save to google, create the google brew and set the google id on the brew
 			brew.googleId = await api.newGoogleBrew(req.account, api.excludeGoogleProps(brew), res);
 
-			if(!brew.googleId) return;
-		} else if(brew.googleId) {
+			if (!brew.googleId) return;
+		} else if (brew.googleId) {
 			// If the google id exists and no other actions are being performed, update the google brew
 			const updated = await GoogleActions.updateGoogleBrew(api.excludeGoogleProps(brew), req.ip);
 
-			if(!updated) return;
+			if (!updated) return;
 		}
 
-		if(brew.googleId) {
+		if (brew.googleId) {
 			// If the google id exists after all those actions, exclude the props that are stored in google and aren't needed for rendering the brew items
 			api.excludeStubProps(brew);
 		} else {
@@ -432,18 +456,18 @@ const api = {
 		brew.updatedAt = new Date();
 		brew.version = (brew.version || 1) + 1;
 
-		if(req.account) {
+		if (req.account) {
 			brew.authors = _.uniq(_.concat(brew.authors, req.account.username));
-			brew.invitedAuthors = _.uniq(_.filter(brew.invitedAuthors, (a)=>req.account.username !== a));
+			brew.invitedAuthors = _.uniq(_.filter(brew.invitedAuthors, (a) => req.account.username !== a));
 		}
 
 		// define a function to catch our save errors
-		const saveError = (err)=>{
+		const saveError = (err) => {
 			console.error(err);
 			res.status(err.status || 500).send(err.message || 'Unable to save brew to Homebrewery database');
 		};
 		let saved;
-		if(!brew._id) {
+		if (!brew._id) {
 			// if the brew does not have a stub id, create and save it, then write the new value back to the brew.
 			saved = await new HomebrewModel(brew).save().catch(saveError);
 		} else {
@@ -452,33 +476,33 @@ const api = {
 			saved = await brew.save()
 				.catch(saveError);
 		}
-		if(!saved) return;
+		if (!saved) return;
 		// Call and wait for afterSave to complete
 		const after = await afterSave();
-		if(!after) return;
+		if (!after) return;
 
 		saved.textBin = undefined; // Remove textBin from the saved object to save bandwidth
 
 		res.status(200).send(saved);
 	},
-	deleteGoogleBrew : async (account, id, editId, res)=>{
+	deleteGoogleBrew: async (account, id, editId, res) => {
 		const auth = await GoogleActions.authCheck(account, res);
 		await GoogleActions.deleteGoogleBrew(auth, id, editId);
 		return true;
 	},
-	deleteBrew : async (req, res, next)=>{
+	deleteBrew: async (req, res, next) => {
 		// Delete an orphaned stub if its Google brew doesn't exist
 		try {
-			await api.getBrew('edit')(req, res, ()=>{});
+			await api.getBrew('edit')(req, res, () => { });
 		} catch (err) {
 			// Only if the error code is HBErrorCode '02', that is, Google returned "404 - Not Found"
-			if(err.HBErrorCode == '02') {
+			if (err.HBErrorCode == '02') {
 				const { id, googleId } = api.getId(req);
 				console.warn(`No google brew found for id ${googleId}, the stub with id ${id} will be deleted.`);
 				await HomebrewModel.deleteOne({ editId: id });
 				return next();
 			}
-			throw(err);
+			throw (err);
 		}
 
 		let brew = req.brew;
@@ -488,22 +512,22 @@ const api = {
 		// If the user is the owner and the file is saved to google, mark the google brew for deletion
 		const shouldDeleteGoogleBrew = googleId && isOwner;
 
-		if(brew._id) {
+		if (brew._id) {
 			brew = _.assign(await HomebrewModel.findOne({ _id: brew._id }), brew);
-			if(account) {
+			if (account) {
 				// Remove current user as author
 				brew.authors = _.pull(brew.authors, account.username);
 			}
 
-			if(brew.authors.length === 0) {
+			if (brew.authors.length === 0) {
 				// Delete brew if there are no authors left
 				await HomebrewModel.deleteOne({ _id: brew._id })
-					.catch((err)=>{
+					.catch((err) => {
 						console.error(err);
 						throw { name: 'BrewDelete Error', message: 'Error while removing', status: 500, HBErrorCode: '07', brewId: brew._id };
 					});
 			} else {
-				if(shouldDeleteGoogleBrew) {
+				if (shouldDeleteGoogleBrew) {
 					// When there are still authors remaining, we delete the google brew but store the full brew in the Homebrewery database
 					brew.googleId = undefined;
 					brew.textBin = zlib.deflateRawSync(brew.text);
@@ -511,31 +535,138 @@ const api = {
 				}
 				brew.markModified('authors'); //Mongo will not properly update arrays without markModified()
 				await brew.save()
-					.catch((err)=>{
+					.catch((err) => {
 						throw { name: 'BrewAuthorDelete Error', message: err, status: 500, HBErrorCode: '08', brewId: brew._id };
 					});
 			}
 		}
-		if(shouldDeleteGoogleBrew) {
+		if (shouldDeleteGoogleBrew) {
 			const deleted = await api.deleteGoogleBrew(account, googleId, editId, res)
-				.catch((err)=>{
+				.catch((err) => {
 					console.error(err);
 					res.status(500).send(err);
 				});
-			if(!deleted) return;
+			if (!deleted) return;
 		}
 
 		res.status(204).send();
+	},
+	renderToHTML: async (req, res) => {
+		const brew = req.brew;
+		splitTextStyleAndMetadata(brew);
+
+		const renderer = brew.renderer || 'V3';
+		const theme = brew.theme || '5ePHB';
+
+		const host = req.get('host');
+		const baseUrl = `${req.protocol}://${host}`;
+
+		const themeStyles = [];
+		let currentTheme = theme;
+		const currentRenderer = renderer;
+
+		while (currentTheme) {
+			if (isStaticTheme(currentRenderer, currentTheme)) {
+				themeStyles.push(`${baseUrl}/themes/${currentRenderer}/${currentTheme}/style.css`);
+				currentTheme = Themes[currentRenderer]?.[currentTheme]?.baseTheme;
+			} else {
+				break;
+			}
+		}
+
+		const body = Markdown.render(brew.text);
+
+		const customStyle = brew.style || '';
+		const themeLinks = themeStyles.reverse().map((url) => `<link rel="stylesheet" href="${url}">`).join('');
+
+		const html = `<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>${brew.title || 'Homebrew'}</title>
+	<link href="//fonts.googleapis.com/css?family=Open+Sans:400,300,600,700" rel="stylesheet" type="text/css" />
+	${themeLinks}
+	<style>${customStyle}</style>
+</head>
+<body>
+	<div class="page">${body}</div>
+</body>
+</html>`;
+
+		return res.json({
+			shareId: brew.shareId,
+			title: brew.title,
+			html: html,
+			renderer: brew.renderer,
+			theme: brew.theme
+		});
+	},
+	renderToSections: async (req, res) => {
+		const brew = req.brew;
+		splitTextStyleAndMetadata(brew);
+
+		const opts = Markdown.marked.defaults;
+		const sectionSource = api.getSectionsSource(brew);
+		const tokens = Markdown.marked.lexer(sectionSource, opts);
+		Markdown.marked.walkTokens(tokens, opts.walkTokens);
+
+		const sections = [];
+		let currentSection = null;
+		let sectionTokens = [];
+
+		for (const token of tokens) {
+			if (token.type === 'heading') {
+				if (currentSection) {
+					currentSection.html = Markdown.marked.parser(sectionTokens, opts);
+					sections.push(currentSection);
+				}
+				currentSection = {
+					level: token.depth,
+					title: token.text,
+					id: token.id || null
+				};
+				sectionTokens = [];
+			}
+
+			if (currentSection) {
+				sectionTokens.push(token);
+			} else {
+				if (!sections.length) {
+					currentSection = {
+						level: 0,
+						title: null,
+						id: null
+					};
+					sectionTokens = [];
+				}
+				sectionTokens.push(token);
+			}
+		}
+
+		if (currentSection) {
+			currentSection.html = Markdown.marked.parser(sectionTokens, opts);
+			sections.push(currentSection);
+		}
+
+		return res.json({
+			shareId: brew.shareId,
+			title: brew.title,
+			renderer: brew.renderer,
+			theme: brew.theme,
+			sections: sections
+		});
 	}
 };
 
 router.use(dbCheck);
 
+router.get('/api/sections/:id', [apiKeyAuth], asyncHandler(api.getBrew('share')), asyncHandler(api.renderToSections));
 router.post('/api', checkClientVersion, asyncHandler(api.newBrew));
 router.put('/api/:id', checkClientVersion, asyncHandler(api.getBrew('edit', false)), asyncHandler(api.updateBrew));
 router.put('/api/update/:id', checkClientVersion, asyncHandler(api.getBrew('edit', false)), asyncHandler(api.updateBrew));
 router.delete('/api/:id', checkClientVersion, asyncHandler(api.deleteBrew));
 router.get('/api/remove/:id', checkClientVersion, asyncHandler(api.deleteBrew));
 router.get('/api/theme/:renderer/:id', asyncHandler(api.getThemeBundle));
+router.get('/api/render/:id', asyncHandler(api.getBrew('share')), asyncHandler(api.renderToHTML));
 
 export default api;

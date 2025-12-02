@@ -1,0 +1,17 @@
+FROM nginx:alpine
+
+RUN apk add --no-cache curl
+
+RUN curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64" \
+    && chmod +x mkcert-v*-linux-amd64 \
+    && mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+
+RUN mkcert -install
+
+RUN mkdir -p /etc/nginx/ssl && \
+    mkcert -key-file /etc/nginx/ssl/key.pem \
+           -cert-file /etc/nginx/ssl/cert.pem \
+           homebrewery.sene-verse.com.localdev \
+           localhost
+
+EXPOSE 443

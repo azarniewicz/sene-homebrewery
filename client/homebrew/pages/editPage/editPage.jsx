@@ -55,22 +55,22 @@ const EditPage = (props)=>{
 		...props
 	};
 
-	const [currentBrew               , setCurrentBrew               ] = useState(props.brew);
-	const [isSaving                  , setIsSaving                  ] = useState(false);
-	const [lastSavedTime             , setLastSavedTime             ] = useState(new Date());
-  const [saveGoogle                , setSaveGoogle                ] = useState(!!props.brew.googleId);
-	const [error                     , setError                     ] = useState(null);
-	const [HTMLErrors                , setHTMLErrors                ] = useState(Markdown.validate(props.brew.text));
-	const [currentEditorViewPageNum  , setCurrentEditorViewPageNum  ] = useState(1);
+	const [currentBrew, setCurrentBrew] = useState(props.brew);
+	const [isSaving, setIsSaving] = useState(false);
+	const [lastSavedTime, setLastSavedTime] = useState(new Date());
+	const [saveGoogle, setSaveGoogle] = useState(!!props.brew.googleId);
+	const [error, setError] = useState(null);
+	const [HTMLErrors, setHTMLErrors] = useState(Markdown.validate(props.brew.text));
+	const [currentEditorViewPageNum, setCurrentEditorViewPageNum] = useState(1);
 	const [currentEditorCursorPageNum, setCurrentEditorCursorPageNum] = useState(1);
 	const [currentBrewRendererPageNum, setCurrentBrewRendererPageNum] = useState(1);
-	const [themeBundle               , setThemeBundle               ] = useState({});
-	const [unsavedChanges            , setUnsavedChanges            ] = useState(false);
-	const [alertTrashedGoogleBrew    , setAlertTrashedGoogleBrew    ] = useState(props.brew.trashed);
-	const [alertLoginToTransfer      , setAlertLoginToTransfer      ] = useState(false);
-	const [confirmGoogleTransfer     , setConfirmGoogleTransfer     ] = useState(false);
-	const [autoSaveEnabled           , setAutoSaveEnabled           ] = useState(true);
-	const [warnUnsavedChanges        , setWarnUnsavedChanges        ] = useState(true);
+	const [themeBundle, setThemeBundle] = useState({});
+	const [unsavedChanges, setUnsavedChanges] = useState(false);
+	const [alertTrashedGoogleBrew, setAlertTrashedGoogleBrew] = useState(props.brew.trashed);
+	const [alertLoginToTransfer, setAlertLoginToTransfer] = useState(false);
+	const [confirmGoogleTransfer, setConfirmGoogleTransfer] = useState(false);
+	const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+	const [warnUnsavedChanges, setWarnUnsavedChanges] = useState(true);
 
 	const editorRef          = useRef(null);
 	const lastSavedBrew      = useRef(_.cloneDeep(props.brew));

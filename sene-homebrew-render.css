@@ -1,0 +1,535 @@
+/* SENE Homebrewery Render CSS - 5ePHB Style */
+/* Based on Homebrewery V3 5ePHB Theme */
+
+:root {
+	/* Colors */
+	--HB_Color_Background: #EEE5CE;
+	--HB_Color_Accent: #E0E5C1;
+	--HB_Color_HeaderUnderline: #C0AD6A;
+	--HB_Color_HorizontalRule: #9C2B1B;
+	--HB_Color_HeaderText: #58180D;
+	--HB_Color_MonsterStatBackground: #F2E5B5;
+	--HB_Color_CaptionText: #766649;
+	--HB_Color_WatercolorStain: #BBAD82;
+	--HB_Color_Footnotes: #C9AD6A;
+}
+
+/* Container/Page Styles */
+.homebrew-render {
+	font-family: 'Georgia', 'Times New Roman', serif;
+	font-size: 0.34cm;
+	background-color: var(--HB_Color_Background);
+	color: #000;
+	padding: 1.5cm;
+	max-width: 21cm;
+	margin: 0 auto;
+	line-height: 1.25em;
+}
+
+/* Base Typography */
+.homebrew-render p {
+	line-height: 1.25em;
+	margin-bottom: 0;
+}
+
+.homebrew-render p + * {
+	margin-top: 0.325cm;
+}
+
+.homebrew-render p + p {
+	margin-top: 0;
+}
+
+.homebrew-render strong {
+	font-weight: bold;
+	letter-spacing: -0.02em;
+}
+
+.homebrew-render em {
+	font-style: italic;
+}
+
+/* Headers */
+.homebrew-render h1,
+.homebrew-render h2,
+.homebrew-render h3,
+.homebrew-render h4 {
+	font-family: 'Georgia', serif;
+	color: var(--HB_Color_HeaderText);
+	font-weight: normal;
+	margin: 0;
+}
+
+.homebrew-render h1 {
+	font-size: 0.89cm;
+	line-height: 1em;
+	margin-bottom: 0.18cm;
+	text-transform: uppercase;
+	border-bottom: 2px solid var(--HB_Color_HeaderUnderline);
+}
+
+.homebrew-render h2 {
+	font-size: 0.75cm;
+	line-height: 0.988em;
+	margin-top: 0.325cm;
+	margin-bottom: 0.1cm;
+}
+
+.homebrew-render h3 {
+	font-size: 0.575cm;
+	line-height: 0.995em;
+	border-bottom: 2px solid var(--HB_Color_HeaderUnderline);
+	margin-top: 0.325cm;
+	padding-bottom: 0.05cm;
+}
+
+.homebrew-render h3 + * {
+	margin-top: 0.17cm;
+}
+
+.homebrew-render h4 {
+	font-size: 0.458cm;
+	line-height: 0.971em;
+	margin-top: 0.325cm;
+}
+
+.homebrew-render h4 + * {
+	margin-top: 0.09cm;
+}
+
+.homebrew-render h5 {
+	font-family: 'Georgia', serif;
+	font-size: 0.423cm;
+	line-height: 0.951em;
+	font-variant: small-caps;
+	font-weight: bold;
+	margin-top: 0.325cm;
+}
+
+.homebrew-render h5 + * {
+	margin-top: 0.2cm;
+}
+
+.homebrew-render h6 {
+	font-family: 'Georgia', serif;
+	font-size: 0.38cm;
+	font-weight: bold;
+	font-variant: small-caps;
+	margin-top: 0.2cm;
+	margin-bottom: 0.1cm;
+}
+
+/* Lists */
+.homebrew-render ul {
+	padding-left: 1.4em;
+	margin-bottom: 0.8em;
+	line-height: 1.25em;
+	list-style-type: disc;
+}
+
+.homebrew-render ol {
+	padding-left: 1.4em;
+	margin-bottom: 0.8em;
+	line-height: 1.25em;
+	list-style-type: decimal;
+}
+
+.homebrew-render ul ul,
+.homebrew-render ol ol,
+.homebrew-render ul ol,
+.homebrew-render ol ul {
+	margin-bottom: 0;
+	margin-left: 1.5em;
+}
+
+/* Text indents after paragraphs or lists */
+.homebrew-render p + p,
+.homebrew-render ul + p,
+.homebrew-render ol + p {
+	text-indent: 1em;
+}
+
+/* Tables */
+.homebrew-render table {
+	font-family: 'Arial', sans-serif;
+	font-size: 0.318cm;
+	line-height: 16px;
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0.325cm 0;
+}
+
+.homebrew-render table + * {
+	margin-top: 0.325cm;
+}
+
+.homebrew-render table thead {
+	display: table-row-group;
+	font-weight: 800;
+}
+
+.homebrew-render table thead th {
+	padding: 0px 1.5px;
+	vertical-align: bottom;
+	text-align: left;
+	border-bottom: 2px solid var(--HB_Color_HeaderText);
+}
+
+.homebrew-render table tbody tr td {
+	padding: 0px 1.5px;
+}
+
+.homebrew-render table tbody tr:nth-child(odd) {
+	background-color: var(--HB_Color_Accent);
+}
+
+/* Text indent after tables */
+.homebrew-render table + p {
+	text-indent: 1em;
+}
+
+/* Blockquotes */
+.homebrew-render blockquote {
+	font-style: italic;
+	line-height: 1.4em;
+	margin: 0.325cm 0;
+	padding-left: 1em;
+	border-left: 3px solid var(--HB_Color_HeaderUnderline);
+}
+
+.homebrew-render blockquote p {
+	font-style: italic;
+	line-height: 1.4em;
+}
+
+/* Block Elements */
+.homebrew-render .block {
+	display: block;
+	margin: 0.325cm 0;
+}
+
+/* Note Block */
+.homebrew-render .block.note {
+	font-family: 'Arial', sans-serif;
+	font-size: 0.318cm;
+	padding: 0.4cm 0.5cm;
+	background-color: var(--HB_Color_Accent);
+	border: 2px solid var(--HB_Color_HeaderUnderline);
+	border-radius: 4px;
+	box-shadow: 1px 4px 14px rgba(136, 136, 136, 0.5);
+	margin: 0.45cm 0;
+}
+
+.homebrew-render .block.note p {
+	line-height: 1.2em;
+	margin-bottom: 0.2cm;
+}
+
+.homebrew-render .block.note p:last-child {
+	margin-bottom: 0;
+}
+
+.homebrew-render .block.note h5 {
+	font-size: 0.375cm;
+	margin-top: 0;
+}
+
+.homebrew-render .block.note + * {
+	margin-top: 0.45cm;
+}
+
+/* Descriptive Block */
+.homebrew-render .block.descriptive {
+	font-family: 'Arial', sans-serif;
+	font-size: 0.318cm;
+	padding: 0.4cm 0.5cm;
+	background-color: #FAF7EA;
+	border: 2px solid var(--HB_Color_HeaderUnderline);
+	border-radius: 4px;
+	box-shadow: 0 0 6px #FAF7EA;
+	margin: 0.45cm 0;
+}
+
+.homebrew-render .block.descriptive p {
+	line-height: 1.5em;
+	margin-bottom: 0.2cm;
+}
+
+.homebrew-render .block.descriptive p:last-child {
+	margin-bottom: 0;
+}
+
+.homebrew-render .block.descriptive h5 {
+	font-size: 0.375cm;
+	margin-top: 0;
+}
+
+.homebrew-render .block.descriptive + * {
+	margin-top: 0.45cm;
+}
+
+/* Footnote Block */
+.homebrew-render .block.footnote {
+	font-size: 0.28cm;
+	color: var(--HB_Color_Footnotes);
+	font-style: italic;
+	margin: 0.2cm 0;
+	padding: 0.2cm 0;
+	border-top: 1px solid var(--HB_Color_Footnotes);
+}
+
+/* Wide Blocks */
+.homebrew-render .block.wide {
+	width: 100%;
+	margin-left: 0;
+	margin-right: 0;
+}
+
+/* Frame Blocks */
+.homebrew-render .block.frame {
+	border: 4px solid var(--HB_Color_HeaderUnderline);
+	padding: 0.5cm;
+	background-color: var(--HB_Color_MonsterStatBackground);
+}
+
+/* Monster Stat Block */
+.homebrew-render .monster {
+	font-family: 'Arial', sans-serif;
+	font-size: 0.318cm;
+	padding: 0.3cm 0.4cm;
+	margin-bottom: 0.325cm;
+	background-color: var(--HB_Color_MonsterStatBackground);
+	border: 2px solid var(--HB_Color_HeaderText);
+	position: relative;
+}
+
+.homebrew-render .monster.frame {
+	padding: 0.4cm;
+	border: 3px solid var(--HB_Color_HeaderText);
+	box-shadow: 1px 4px 14px rgba(136, 136, 136, 0.5);
+}
+
+.homebrew-render .monster h2 {
+	margin: 0;
+	font-size: 0.62cm;
+	line-height: 1em;
+	color: var(--HB_Color_HeaderText);
+}
+
+.homebrew-render .monster h2 + p {
+	margin-bottom: 0;
+	font-size: 0.304cm;
+}
+
+.homebrew-render .monster h3 {
+	font-family: 'Arial', sans-serif;
+	font-size: 0.45cm;
+	font-variant: small-caps;
+	border-bottom: 1.5px solid var(--HB_Color_HeaderText);
+	margin-top: 0.2cm;
+}
+
+.homebrew-render .monster hr {
+	visibility: visible;
+	height: 2px;
+	margin: 0.12cm 0;
+	background-color: var(--HB_Color_HorizontalRule);
+	border: none;
+}
+
+.homebrew-render .monster hr ~ dl,
+.homebrew-render .monster hr ~ p {
+	color: var(--HB_Color_HeaderText);
+}
+
+.homebrew-render .monster hr:last-of-type ~ dl,
+.homebrew-render .monster hr:last-of-type ~ p {
+	color: inherit;
+}
+
+.homebrew-render .monster hr:last-of-type + * {
+	margin-top: 0.325cm;
+}
+
+/* Code Blocks */
+.homebrew-render code {
+	padding: 0px 4px;
+	font-size: 0.325cm;
+	font-family: 'Courier New', monospace;
+	color: #58180D;
+	background-color: #FAF7EA;
+	border-radius: 4px;
+}
+
+.homebrew-render pre {
+	margin: 0.325cm 0;
+}
+
+.homebrew-render pre code {
+	display: block;
+	padding: 0.4cm;
+	border: 2px solid var(--HB_Color_HeaderUnderline);
+	border-radius: 8px;
+	overflow-x: auto;
+}
+
+.homebrew-render pre code + * {
+	margin-top: 0.325cm;
+}
+
+/* Horizontal Rules */
+.homebrew-render hr {
+	visibility: hidden;
+	margin: 0.325cm 0;
+	border: none;
+}
+
+/* Images */
+.homebrew-render img {
+	max-width: 100%;
+	height: auto;
+	display: block;
+	margin: 0.325cm 0;
+}
+
+/* Definition Lists */
+.homebrew-render dl {
+	line-height: 1.25em;
+	margin: 0.325cm 0;
+}
+
+.homebrew-render dl + * {
+	margin-top: 0.17cm;
+}
+
+.homebrew-render p + dl {
+	margin-top: 0.17cm;
+}
+
+.homebrew-render dt {
+	font-weight: bold;
+	margin-top: 0.2cm;
+	margin-right: 5px;
+}
+
+.homebrew-render dd {
+	margin-left: 1.5em;
+	margin-bottom: 0.2cm;
+}
+
+/* Quote with Attribution */
+.homebrew-render .quote p {
+	font-style: italic;
+	line-height: 1.4em;
+}
+
+.homebrew-render .quote .attribution {
+	display: block;
+	font-style: normal;
+	line-height: 1.4em;
+	text-align: right;
+	margin-top: 0.2cm;
+}
+
+.homebrew-render .quote .attribution::before {
+	margin-right: 0.2em;
+	content: '---';
+}
+
+/* Artist Credit */
+.homebrew-render .artist {
+	font-family: 'Comic Sans MS', cursive;
+	font-size: 0.27cm;
+	color: var(--HB_Color_CaptionText);
+	text-align: center;
+	margin: 0.2cm 0;
+}
+
+.homebrew-render .artist p {
+	margin: 0;
+	line-height: 1em;
+	text-indent: 0;
+}
+
+/* Watermark */
+.homebrew-render .watermark {
+	color: black;
+	opacity: 0.1;
+}
+
+/* Spell List */
+.homebrew-render .spellList {
+	font-family: 'Arial', sans-serif;
+	column-count: 2;
+	column-gap: 0.5cm;
+}
+
+.homebrew-render .spellList p,
+.homebrew-render .spellList ul {
+	font-size: 0.352cm;
+	line-height: 1.265em;
+}
+
+.homebrew-render .spellList ul {
+	padding-left: 1em;
+	margin-bottom: 0.5em;
+	text-indent: -1em;
+	list-style-type: none;
+}
+
+.homebrew-render .spellList.wide {
+	column-count: 4;
+}
+
+/* Class Table */
+.homebrew-render .classTable {
+	margin: 0.7cm 0 0.9cm 0;
+}
+
+.homebrew-render .classTable.frame {
+	border: 4px solid var(--HB_Color_HeaderUnderline);
+	padding: 0.3cm;
+	background-color: white;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+	.homebrew-render {
+		padding: 1cm;
+		font-size: 14px;
+	}
+	
+	.homebrew-render h1 {
+		font-size: 28px;
+	}
+	
+	.homebrew-render h2 {
+		font-size: 24px;
+	}
+	
+	.homebrew-render h3 {
+		font-size: 20px;
+	}
+	
+	.homebrew-render h4 {
+		font-size: 18px;
+	}
+	
+	.homebrew-render .spellList {
+		column-count: 1;
+	}
+}
+
+/* Print Styles */
+@media print {
+	.homebrew-render {
+		background-color: white;
+		padding: 0;
+	}
+	
+	.homebrew-render .block.note,
+	.homebrew-render .block.descriptive,
+	.homebrew-render .monster.frame {
+		box-shadow: none;
+	}
+}

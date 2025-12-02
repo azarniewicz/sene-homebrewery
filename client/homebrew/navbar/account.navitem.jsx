@@ -23,17 +23,8 @@ const Account = createClass({
 		if(confirm('Are you sure you want to log out?')) {
 			// Reset divider position
 			window.localStorage.removeItem('naturalcrit-pane-split');
-			// Clear login cookie
-			let domain = '';
-			if(window.location?.hostname) {
-				let domainArray = window.location.hostname.split('.');
-				if(domainArray.length > 2){
-					domainArray = [''].concat(domainArray.slice(-2));
-				}
-				domain = domainArray.join('.');
-			}
-			document.cookie = `nc_session=;expires=Thu, 01 Jan 1970 00:00:01 GMT;path=/;samesite=lax;${domain ? `domain=${domain}` : ''}`;
-			window.location = '/';
+			// Redirect to logout endpoint which clears cookies and redirects to SENE Beyond
+			window.location = '/logout';
 		}
 	},
 

@@ -1,0 +1,22 @@
+services:
+  homebrewery:
+    environment:
+      NODE_ENV: local
+      MONGODB_URI: mongodb://mongodb/homebrewery
+    extra_hosts:
+      - "sene-verse.com.localdev:host-gateway"
+    ports:
+      - "8000:8000"
+
+  homebrew-nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx-local
+    ports:
+      - "8443:443"
+    volumes:
+      - ./nginx-local.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - homebrewery
+    networks:
+      - sene-network
