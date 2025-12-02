@@ -29,7 +29,8 @@ nano .env
 
 Required values:
 - `MONGO_ROOT_USER` - MongoDB admin username
-- `MONGO_ROOT_PASSWORD` - Strong password (min 16 chars)
+- `MONGO_ROOT_PASSWORD` - Strong password WITHOUT special URI chars (@:/?#[]%&+=)
+  - Generate with: `openssl rand -base64 32 | tr -d '/+=' | head -c 32`
 - `JWT_SECRET` - Generate with: `openssl rand -base64 32`
 - `API_KEY` - Secure API key
 
@@ -75,7 +76,7 @@ docker compose -f docker-compose.production.yml logs -f
 docker compose -f docker-compose.production.yml ps
 
 # Test endpoints
-curl -k https://homebrewery.sene-verse.com/health
+curl -k https://homebrewery.sene-verse.com/
 ```
 
 ## Maintenance
@@ -129,7 +130,7 @@ docker compose -f docker-compose.production.yml exec mongodb \
   --eval "db.adminCommand('ping')"
 
 # Application
-curl -k https://homebrewery.sene-verse.com/health
+curl -k https://homebrewery.sene-verse.com/
 ```
 
 ## Troubleshooting
