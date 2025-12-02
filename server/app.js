@@ -121,7 +121,7 @@ app.use((req, res, next) => {
 });
 
 app.use(homebrewApi);
-app.use(adminApi);
+// app.use(adminApi); // Admin panel disabled
 app.use(vaultApi);
 
 const welcomeText = fs.readFileSync('client/homebrew/pages/homePage/welcome_msg.md', 'utf8');

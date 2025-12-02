@@ -13,24 +13,15 @@ import { splitTextStyleAndMetadata } from '../shared/helpers.js';
 const router = express.Router();
 
 
-process.env.ADMIN_USER = process.env.ADMIN_USER || 'admin';
-process.env.ADMIN_PASS = process.env.ADMIN_PASS || 'password3';
-
 const mw = {
 	adminOnly : (req, res, next)=>{
-		if(!req.get('authorization')){
-			return res
-				.set('WWW-Authenticate', 'Basic realm="Authorization Required"')
-				.status(401)
-				.send('Authorization Required');
+		const userRoles = req.account?.roles || [];
+		const isAdmin = userRoles.includes('admin') || userRoles.includes('administrator');
+		
+		if(!isAdmin){
+			throw { HBErrorCode: '52', code: 403, message: 'Admin access required' };
 		}
-		const [username, password] = Buffer.from(req.get('authorization').split(' ').pop(), 'base64')
-			.toString('ascii')
-			.split(':');
-		if(process.env.ADMIN_USER === username && process.env.ADMIN_PASS === password){
-			return next();
-		}
-		throw { HBErrorCode: '52', code: 401, message: 'Access denied' };
+		return next();
 	}
 };
 
@@ -340,7 +331,7 @@ router.put('/api/lock/review/remove/:id', mw.adminOnly, asyncHandler(async (req,
 
 // #######################   NOTIFICATIONS
 
-router.get('/admin/notification/all', async (req, res, next)=>{
+router.get('/api/notification/all', async (req, res, next)=>{
 	try {
 		const notifications = await NotificationModel.getAll();
 		return res.json(notifications);

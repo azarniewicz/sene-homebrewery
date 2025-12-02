@@ -11,7 +11,7 @@ const ToolBar  = require('./toolBar/toolBar.jsx');
 
 //TODO: move to the brew renderer
 const RenderWarnings = require('client/components/renderWarnings/renderWarnings.jsx');
-const NotificationPopup = require('./notificationPopup/notificationPopup.jsx');
+// const NotificationPopup = require('./notificationPopup/notificationPopup.jsx'); // Admin notifications disabled
 const Frame = require('react-frame-component').default;
 const dedent = require('dedent-tabs').default;
 const { printCurrentBrew } = require('../../../shared/helpers.js');
@@ -312,7 +312,6 @@ const BrewRenderer = (props)=>{
 			<ErrorBar errors={props.errors} />
 			<div className='popups' ref={mainRef}>
 				<RenderWarnings />
-				<NotificationPopup />
 			</div>
 
 			<ToolBar displayOptions={displayOptions} onDisplayOptionsChange={handleDisplayOptionsChange} visiblePages={state.visiblePages.length > 0 ? state.visiblePages : [state.centerPage]} totalPages={rawPages.length} headerState={headerState} setHeaderState={setHeaderState}/>
