@@ -1,5 +1,5 @@
 FROM node:22-alpine
-RUN apk --no-cache add git wget
+RUN apk --no-cache add git
 
 ENV NODE_ENV=docker
 
