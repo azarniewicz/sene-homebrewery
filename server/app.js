@@ -36,7 +36,7 @@ import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import forceSSL from './forcessl.mw.js';
 import dbCheck from './middleware/dbCheck.js';
-import authMiddleware from './middleware/auth.js';
+import { authApi, authPage } from './middleware/auth.js';
 
 
 const sanitizeBrew = (brew, accessType) => {
@@ -70,6 +70,7 @@ const corsOptions = {
 			'https://naturalcrit-stage.herokuapp.com',
 			'https://homebrewery-stage.herokuapp.com',
 			'https://homebrewery.sene-verse.com',
+			'https://homebrewery.sene-verse.com.localdev'
 		];
 
 		const localNetworkRegex = /^http:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+):\d+$/;
@@ -98,8 +99,10 @@ app.get('/logout', (req, res) => {
 	return res.redirect(`${seneVerseBackendUrl}/admin/logout`);
 });
 
-//Auth Middleware - protect all routes
-app.use(authMiddleware);
+//Auth Middleware - protect routes
+app.use('/api', authApi);
+app.use('/admin', authApi);
+app.use(authPage);
 
 //Account Middleware
 app.use((req, res, next) => {

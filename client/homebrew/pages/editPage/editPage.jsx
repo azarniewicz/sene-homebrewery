@@ -60,6 +60,7 @@ const EditPage = (props)=>{
 	const [lastSavedTime, setLastSavedTime] = useState(new Date());
 	const [saveGoogle, setSaveGoogle] = useState(!!props.brew.googleId);
 	const [error, setError] = useState(null);
+	const [waitingForAuth, setWaitingForAuth] = useState(false);
 	const [HTMLErrors, setHTMLErrors] = useState(Markdown.validate(props.brew.text));
 	const [currentEditorViewPageNum, setCurrentEditorViewPageNum] = useState(1);
 	const [currentEditorCursorPageNum, setCurrentEditorCursorPageNum] = useState(1);
@@ -122,6 +123,17 @@ const EditPage = (props)=>{
 	useEffect(()=>{
 		trySave(true);
 	}, [saveGoogle]);
+
+	useEffect(()=>{
+		const handleFocus = ()=>{
+			if(waitingForAuth) {
+				setWaitingForAuth(false);
+				trySave(true);
+			}
+		};
+		window.addEventListener('focus', handleFocus);
+		return ()=>window.removeEventListener('focus', handleFocus);
+	}, [waitingForAuth]);
 
 	const handleSplitMove = ()=>{
 		editorRef.current?.update();
@@ -345,6 +357,11 @@ const EditPage = (props)=>{
 		setIsSaving(false);
 	};
 
+	const handleAuthRetry = ()=>{
+		setWaitingForAuth(true);
+		clearError();
+	};
+
 	const renderNavbar = ()=>{
 		return <Navbar>
 			<Nav.section>
@@ -354,7 +371,7 @@ const EditPage = (props)=>{
 			<Nav.section>
 				{renderGoogleDriveIcon()}
 				{error
-					? <ErrorNavItem error={error} clearError={clearError} />
+					? <ErrorNavItem error={error} clearError={clearError} onAuthRetry={handleAuthRetry} />
 					: <Nav.dropdown className='save-menu'>
 						{renderSaveButton()}
 						{renderAutoSaveButton()}

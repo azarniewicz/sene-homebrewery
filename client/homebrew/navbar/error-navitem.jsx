@@ -2,7 +2,7 @@ require('./error-navitem.less');
 const React = require('react');
 const Nav = require('client/homebrew/navbar/nav.jsx');
 
-const ErrorNavItem = ({ error = '', clearError }) => {
+const ErrorNavItem = ({ error = '', clearError, onAuthRetry }) => {
 	const response = error.response;
 	const errorCode = error.code;
 	const status = response?.status;
@@ -31,6 +31,22 @@ const ErrorNavItem = ({ error = '', clearError }) => {
 			Oops!
 			<div className='errorContainer' onClick={clearError}>
 				{message ?? 'Your client is out of date. Please save your changes elsewhere and refresh.'}
+			</div>
+		</Nav.item>;
+	}
+
+	if (status === 401 && error.refreshFailed) {
+		return <Nav.item className='save error' icon='fas fa-exclamation-triangle'>
+			Oops!
+			<div className='errorContainer'>
+				Your session has expired! Please log in to Sene-Verse and try again.
+				<br></br>
+				<a target='_blank' rel='noopener noreferrer'
+					href={`${global.config.seneVerseBackendUrl}/admin/login?closeAfterLogin=true`}>
+					<div className='confirm' onClick={onAuthRetry || clearError}>
+						Log In
+					</div>
+				</a>
 			</div>
 		</Nav.item>;
 	}
@@ -140,6 +156,9 @@ const ErrorNavItem = ({ error = '', clearError }) => {
 			Report the issue <a target='_blank' rel='noopener noreferrer' href={`https://github.com/azarniewicz/sene-homebrewery/issues/new?template=save_issue.yml&error-code=${encodeURIComponent(errMsg)}`}>
 				here
 			</a>.
+			<div className='deny' onClick={clearError}>
+				Dismiss
+			</div>
 		</div>
 	</Nav.item>;
 };

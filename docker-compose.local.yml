@@ -3,8 +3,6 @@ services:
     environment:
       NODE_ENV: local
       MONGODB_URI: mongodb://mongodb/homebrewery
-    extra_hosts:
-      - "sene-verse.com.localdev:host-gateway"
     ports:
       - "8000:8000"
 
@@ -20,3 +18,7 @@ services:
       - homebrewery
     networks:
       - sene-network
+
+networks:
+  sene-network:
+    external: true
