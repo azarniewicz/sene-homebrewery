@@ -71,6 +71,11 @@ const verifyJwtToken = (token, req, res, next, onError) => {
 			return onError(req, res);
 		}
 
+		if (!decoded.roles || !decoded.roles.includes('ROLE_ADMIN')) {
+			console.error('User does not have admin role');
+			return onError(req, res);
+		}
+
 		assignUserContext(req, decoded);
 		return next();
 	});
@@ -79,18 +84,14 @@ const verifyJwtToken = (token, req, res, next, onError) => {
 const createAuthMiddleware = (onError) => {
 	return (req, res, next) => {
 		if (req.headers?.authorization) {
-			console.log('Authorization header found');
 			return apiKeyAuth(req, res, next);
 		}
 
 		const cookieToken = req.cookies?.auth_token;
 		if (cookieToken) {
-			console.log('Cookie token found');
 			return verifyJwtToken(cookieToken, req, res, next, onError);
 		}
 
-		console.log('No authorization header or cookie token found');
-		console.log('Cookies:', JSON.stringify(req.cookies));
 		return onError(req, res);
 	};
 };
