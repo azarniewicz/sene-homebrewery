@@ -97,10 +97,10 @@ const Snippetbar = createClass({
 		}
 	},
 
-	mergeCustomizer : function(oldValue, newValue, key) {
-		if(key == 'snippets') {
+	mergeCustomizer : function(oldValue, newValue, key) {
+		if(key == 'snippets') {
 			const result = _.reverse(_.unionBy(_.reverse(newValue), _.reverse(oldValue), 'name')); // Join snippets together, with preference for the child theme over the parent theme
-			return result.filter((snip)=>snip.gen || snip.subsnippets);
+			return result.filter((snip)=>snip.gen !== undefined || snip.subsnippets || snip.useImagePicker);
 		};
 	},
 
@@ -127,8 +127,8 @@ const Snippetbar = createClass({
 		return compiledSnippets;
 	},
 
-	handleSnippetClick : function(injectedText){
-		this.props.onInject(injectedText);
+	handleSnippetClick : function(injectedText, snippetData){
+		this.props.onInject(injectedText, snippetData);
 	},
 
 	toggleThemeSelector : function(e){
@@ -296,7 +296,11 @@ const SnippetGroup = createClass({
 	},
 	handleSnippetClick : function(e, snippet){
 		e.stopPropagation();
-		this.props.onSnippetClick(execute(snippet.gen, this.props));
+		const snippetData = {
+			useImagePicker : snippet.useImagePicker || false,
+			template       : snippet.template || null
+		};
+		this.props.onSnippetClick(execute(snippet.gen, this.props), snippetData);
 	},
 	renderSnippets : function(snippets){
 		return _.map(snippets, (snippet)=>{

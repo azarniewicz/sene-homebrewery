@@ -9,6 +9,7 @@ import Markdown from '../../../shared/markdown.js';
 const CodeEditor = require('client/components/codeEditor/codeEditor.jsx');
 const SnippetBar = require('./snippetbar/snippetbar.jsx');
 const MetadataEditor = require('./metadataEditor/metadataEditor.jsx');
+const ImagePicker = require('client/components/imagePicker/imagePicker.jsx');
 
 const EDITOR_THEME_KEY = 'HB_editor_theme';
 
@@ -56,9 +57,11 @@ const Editor = createClass({
 	},
 	getInitialState : function() {
 		return {
-			editorTheme      : this.props.editorTheme,
-			view             : 'text', //'text', 'style', 'meta', 'snippet'
-			snippetBarHeight : 26,
+			editorTheme       : this.props.editorTheme,
+			view              : 'text', //'text', 'style', 'meta', 'snippet'
+			snippetBarHeight  : 26,
+			showImagePicker   : false,
+			imagePickerSnippet : null,
 		};
 	},
 
@@ -146,8 +149,34 @@ const Editor = createClass({
 		this.props.onViewPageChange(currentPage);
 	},
 
-	handleInject : function(injectText){
-		this.codeEditor.current?.injectText(injectText, false);
+	handleInject : function(injectText, snippetData){
+		if(snippetData && snippetData.useImagePicker) {
+			this.setState({
+				showImagePicker   : true,
+				imagePickerSnippet : snippetData
+			});
+		} else {
+			this.codeEditor.current?.injectText(injectText, false);
+		}
+	},
+
+	handleImageSelect : function(imageUrl){
+		const { imagePickerSnippet } = this.state;
+		if(imagePickerSnippet && imagePickerSnippet.template) {
+			const generatedText = imagePickerSnippet.template(imageUrl);
+			this.codeEditor.current?.injectText(generatedText, false);
+		}
+		this.setState({
+			showImagePicker   : false,
+			imagePickerSnippet : null
+		});
+	},
+
+	handleImagePickerClose : function(){
+		this.setState({
+			showImagePicker   : false,
+			imagePickerSnippet : null
+		});
 	},
 
 	handleViewChange : function(newView){
@@ -537,6 +566,13 @@ const Editor = createClass({
 				/>
 
 				{this.renderEditor()}
+
+				{this.state.showImagePicker && (
+					<ImagePicker
+						onSelect={this.handleImageSelect}
+						onClose={this.handleImagePickerClose}
+					/>
+				)}
 			</div>
 		);
 	}

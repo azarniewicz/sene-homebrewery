@@ -1,6 +1,6 @@
 import request from 'superagent';
 
-const addHeader = (req)=>req.set('Homebrewery-Version', global.version);
+const addHeader = (req)=>req.set('Homebrewery-Version', global.version).withCredentials();
 
 let isRefreshing = false;
 let refreshPromise = null;
