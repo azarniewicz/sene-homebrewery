@@ -5,6 +5,7 @@ import express from 'express';
 import zlib from 'zlib';
 import GoogleActions from './googleActions.js';
 import Markdown from '../shared/markdown.js';
+import SeneVerseSync from './seneVerseSync.js';
 import yaml from 'js-yaml';
 import asyncHandler from 'express-async-handler';
 import { nanoid } from 'nanoid';
@@ -417,6 +418,8 @@ const api = {
 		brew.description = brew.description.trim() || '';
 		brew.text = api.mergeBrewText(brew);
 
+		const brewForSync = _.cloneDeep(brew);
+
 		const googleId = brew.googleId;
 		const { saveToGoogle, removeFromGoogle } = req.query;
 		let afterSave = async () => true;
@@ -483,12 +486,30 @@ const api = {
 
 		saved.textBin = undefined; // Remove textBin from the saved object to save bandwidth
 
+		SeneVerseSync.syncBrewToSeneVerse(brewForSync, req.cookies?.auth_token);
+
 		res.status(200).send(saved);
 	},
 	deleteGoogleBrew: async (account, id, editId, res) => {
 		const auth = await GoogleActions.authCheck(account, res);
 		await GoogleActions.deleteGoogleBrew(auth, id, editId);
 		return true;
+	},
+	triggerSync: async (req, res) => {
+		const brew = req.brew;
+		const userToken = req.cookies?.auth_token;
+		
+		if (!brew) {
+			return res.status(404).json({ error: 'Brew not found' });
+		}
+		
+		try {
+			await SeneVerseSync.performSync(brew, userToken);
+			res.status(200).json({ success: true, message: 'Sync triggered successfully' });
+		} catch (error) {
+			console.error('[API] Error triggering sync:', error);
+			res.status(500).json({ error: 'Failed to trigger sync', message: error.message });
+		}
 	},
 	deleteBrew: async (req, res, next) => {
 		// Delete an orphaned stub if its Google brew doesn't exist
@@ -664,6 +685,7 @@ router.get('/api/sections/:id', [apiKeyAuth], asyncHandler(api.getBrew('share'))
 router.post('/api', checkClientVersion, asyncHandler(api.newBrew));
 router.put('/api/:id', checkClientVersion, asyncHandler(api.getBrew('edit', false)), asyncHandler(api.updateBrew));
 router.put('/api/update/:id', checkClientVersion, asyncHandler(api.getBrew('edit', false)), asyncHandler(api.updateBrew));
+router.post('/api/sync/:id', checkClientVersion, asyncHandler(api.getBrew('edit', false)), asyncHandler(api.triggerSync));
 router.delete('/api/:id', checkClientVersion, asyncHandler(api.deleteBrew));
 router.get('/api/remove/:id', checkClientVersion, asyncHandler(api.deleteBrew));
 router.get('/api/theme/:renderer/:id', asyncHandler(api.getThemeBundle));

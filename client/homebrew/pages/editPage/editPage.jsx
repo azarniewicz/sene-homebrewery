@@ -72,6 +72,8 @@ const EditPage = (props)=>{
 	const [confirmGoogleTransfer, setConfirmGoogleTransfer] = useState(false);
 	const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
 	const [warnUnsavedChanges, setWarnUnsavedChanges] = useState(true);
+	const [isSyncing, setIsSyncing] = useState(false);
+	const [syncStatus, setSyncStatus] = useState(null);
 
 	const editorRef          = useRef(null);
 	const lastSavedBrew      = useRef(_.cloneDeep(props.brew));
@@ -352,6 +354,48 @@ const EditPage = (props)=>{
 		</Nav.item>
 	);
 
+	const handleSyncClick = async ()=>{
+		setIsSyncing(true);
+		setSyncStatus(null);
+		
+		try {
+			const res = await request
+				.post(`/api/sync/${currentBrew.editId}`)
+				.catch((err)=>{
+					console.error('Error syncing to Sene-Verse:', err);
+					setSyncStatus('error');
+					throw err;
+				});
+			
+			if(res?.body?.success) {
+				setSyncStatus('success');
+				setTimeout(()=>setSyncStatus(null), 3000);
+			}
+		} catch(err) {
+			console.error('Sync failed:', err);
+			setSyncStatus('error');
+			setTimeout(()=>setSyncStatus(null), 3000);
+		} finally {
+			setIsSyncing(false);
+		}
+	};
+
+	const renderSyncButton = ()=>{
+		if(isSyncing) {
+			return <Nav.item className='sync' icon='fas fa-spinner fa-spin'>syncing...</Nav.item>;
+		}
+		
+		if(syncStatus === 'success') {
+			return <Nav.item className='sync success' icon='fas fa-check'>synced!</Nav.item>;
+		}
+		
+		if(syncStatus === 'error') {
+			return <Nav.item className='sync error' icon='fas fa-exclamation-triangle'>sync failed</Nav.item>;
+		}
+		
+		return <Nav.item className='sync' onClick={handleSyncClick} color='green' icon='fas fa-sync'>sync to sene-verse</Nav.item>;
+	};
+
 	const clearError = ()=>{
 		setError(null);
 		setIsSaving(false);
@@ -376,6 +420,7 @@ const EditPage = (props)=>{
 						{renderSaveButton()}
 						{renderAutoSaveButton()}
 					</Nav.dropdown>}
+				{renderSyncButton()}
 				<NewBrewItem />
 				<PrintNavItem />
 				<HelpNavItem />

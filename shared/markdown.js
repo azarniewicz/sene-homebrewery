@@ -8,12 +8,12 @@ import MarkedAlignedParagraphs  from 'marked-alignment-paragraphs';
 import MarkedNonbreakingSpaces  from 'marked-nonbreaking-spaces';
 import MarkedSubSuperText       from 'marked-subsuper-text';
 import { markedVariables,
-				setMarkedVariablePage,
-				setMarkedVariable,
-				getMarkedVariable }  from 'marked-variables';
-import { markedSmartypantsLite as MarkedSmartypantsLite }                                from 'marked-smartypants-lite';
-import { gfmHeadingId as MarkedGFMHeadingId, resetHeadings as MarkedGFMResetHeadingIDs } from 'marked-gfm-heading-id';
-import { markedEmoji as MarkedEmojis }                                                   from 'marked-emoji';
+	setMarkedVariablePage,
+	setMarkedVariable,
+	getMarkedVariable }  from 'marked-variables';
+import { markedSmartypantsLite as MarkedSmartypantsLite } from 'marked-smartypants-lite';
+import { markedEmoji as MarkedEmojis }                    from 'marked-emoji';
+import { customHeadingId, resetHeadingIDs }               from './markedHeadingId.js';
 
 //Icon fonts included so they can appear in emoji autosuggest dropdown
 import diceFont      from '../themes/fonts/iconFonts/diceFont.js';
@@ -361,7 +361,7 @@ Marked.use(MarkedAlignedParagraphs());
 Marked.use(MarkedSubSuperText());
 Marked.use(MarkedNonbreakingSpaces());
 Marked.use({ renderer: renderer, tokenizer: tokenizer, mangle: false });
-Marked.use(MarkedExtendedTables({ interruptPatterns: tableTerminators }), MarkedGFMHeadingId({ globalSlugs: true }),
+Marked.use(MarkedExtendedTables({ interruptPatterns: tableTerminators }), customHeadingId(),
 	MarkedSmartypantsLite(), MarkedEmojis(MarkedEmojiOptions));
 
 function cleanUrl(href) {
@@ -490,7 +490,7 @@ const Markdown = {
 			!isNaN(Number(lastPageNumber)) ? Number(lastPageNumber) + 1 : lastPageNumber,
 			pageNumber);
 
-		if(pageNumber==0) MarkedGFMResetHeadingIDs();
+		if(pageNumber==0) resetHeadingIDs();
 
 		rawBrewText = rawBrewText.replace(/^\\column(?:break)?$/gm, `\n<div class='columnSplit'></div>\n`);
 
