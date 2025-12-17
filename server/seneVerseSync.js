@@ -8,6 +8,7 @@ const PAGEBREAK_REGEX_V3 = /^(?=\\page(?:break)?(?: *{[^\n{}]*})?$)/m;
 const PAGEBREAK_REGEX_LEGACY = /\\page(?:break)?/m;
 const FRONT_COVER_MARKER = '{{frontCover';
 const PAGE_DIRECTIVE_LINE_REGEX = /^\s*\\page(?:break)?(?: *{[^\n{}]*})?\s*(?:\r?\n|$)/gm;
+const COLUMN_DIRECTIVE_REGEX = /^\s*\\column\s*(?:\r?\n|$)/gm;
 
 const splitPages = (text, renderer) => {
 	const regex = renderer === 'legacy' ? PAGEBREAK_REGEX_LEGACY : PAGEBREAK_REGEX_V3;
@@ -15,6 +16,12 @@ const splitPages = (text, renderer) => {
 };
 
 const stripPageDirectives = (text) => text.replace(PAGE_DIRECTIVE_LINE_REGEX, '');
+
+const stripHomebreweryTags = (html) => {
+	return html
+		.replace(COLUMN_DIRECTIVE_REGEX, '')
+		.replace(PAGE_DIRECTIVE_LINE_REGEX, '');
+};
 
 const getFrontCover = (brew) => {
 	const text = brew?.text || '';
@@ -54,7 +61,8 @@ const renderBrewToSections = (brew) => {
 	for (const token of tokens) {
 		if (token.type === 'heading') {
 			if (currentSection) {
-				currentSection.content = Markdown.marked.parser(sectionTokens, opts);
+				const renderedContent = Markdown.marked.parser(sectionTokens, opts);
+				currentSection.content = stripHomebreweryTags(renderedContent);
 				sections.push(currentSection);
 			}
 			currentSection = {
@@ -79,7 +87,8 @@ const renderBrewToSections = (brew) => {
 	}
 
 	if (currentSection) {
-		currentSection.content = Markdown.marked.parser(sectionTokens, opts);
+		const renderedContent = Markdown.marked.parser(sectionTokens, opts);
+		currentSection.content = stripHomebreweryTags(renderedContent);
 		sections.push(currentSection);
 	}
 
@@ -116,7 +125,8 @@ const performSync = async (brew, userToken) => {
 		const brewCopy = _.cloneDeep(brew);
 		splitTextStyleAndMetadata(brewCopy);
 		const frontCoverMd = getFrontCover(brewCopy);
-		const frontCover = frontCoverMd ? Markdown.render(frontCoverMd) : null;
+		const frontCoverRaw = frontCoverMd ? Markdown.render(frontCoverMd) : null;
+		const frontCover = frontCoverRaw ? stripHomebreweryTags(frontCoverRaw) : null;
 
 		// log front cover here
 		console.log('[SeneVerseSync] Front Cover:', frontCover);
@@ -126,8 +136,12 @@ const performSync = async (brew, userToken) => {
 			editId: brew.editId,
 			title: brew.title || 'Untitled Brew',
 			sections,
-			...(frontCover && { frontCover })
+			...(frontCover && { frontCover }),
+			...(brew.thumbnail && { thumbnail: brew.thumbnail }),
+			...(brewCopy.style && { style: brewCopy.style })
 		};
+
+		console.log('[SeneVerseSync] Payload:', payload);
 
 		const seneVerseUrl = config.get('sene_verse_internal_backend_url') || 'https://sene-verse.com';
 		const url = `${seneVerseUrl}/api/sourcebooks`;
